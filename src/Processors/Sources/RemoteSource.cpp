@@ -1,3 +1,4 @@
+#include <variant>
 #include <Processors/Sources/RemoteSource.h>
 #include <QueryPipeline/RemoteQueryExecutor.h>
 #include <QueryPipeline/RemoteQueryExecutorReadContext.h>
@@ -7,6 +8,11 @@
 
 namespace DB
 {
+
+namespace ErrorCodes
+{
+    extern const int LOGICAL_ERROR;
+}
 
 RemoteSource::RemoteSource(RemoteQueryExecutorPtr executor, bool add_aggregation_info_, bool async_read_)
     : ISource(executor->getHeader(), false)
@@ -21,6 +27,17 @@ RemoteSource::RemoteSource(RemoteQueryExecutorPtr executor, bool add_aggregation
 }
 
 RemoteSource::~RemoteSource() = default;
+
+void RemoteSource::connectToScheduler(ResizeProcessor & scheduler)
+{
+    outputs.emplace_back(Block{}, this);
+    dependency_port = &outputs.back();
+    auto * free_port = scheduler.getFreeInputPortIfAny();
+    if (!free_port)
+        throw Exception(ErrorCodes::LOGICAL_ERROR, "There are no free input ports in scheduler. This is a bug");
+
+    connect(*dependency_port, *free_port);
+}
 
 void RemoteSource::setStorageLimits(const std::shared_ptr<const StorageLimitsList> & storage_limits_)
 {
@@ -41,6 +58,10 @@ ISource::Status RemoteSource::prepare()
         return Status::Finished;
     }
 
+    /// Dependency port is full, but reading from local replica is not ended up
+    if (dependency_port && !dependency_port->isFinished() && !dependency_port->canPush())
+        return Status::PortFull;
+
     if (is_async_state)
         return Status::Async;
 
@@ -50,6 +71,8 @@ ISource::Status RemoteSource::prepare()
     if (status == Status::Finished)
     {
         query_executor->finish(&read_context);
+        if (dependency_port)
+            dependency_port->finish();
         is_async_state = false;
     }
     return status;
@@ -88,10 +111,22 @@ std::optional<Chunk> RemoteSource::tryGenerate()
     if (async_read)
     {
         auto res = query_executor->read(read_context);
+
+        if (std::holds_alternative<RemoteQueryExecutor::Nothing>(res))
+            throw Exception(ErrorCodes::LOGICAL_ERROR, "This is a bug");
+
         if (std::holds_alternative<int>(res))
         {
             fd = std::get<int>(res);
             is_async_state = true;
+            return Chunk();
+        }
+        else if (std::holds_alternative<RemoteQueryExecutor::ParallelReplicasToken>(res))
+        {
+            /// For each empty chunk we have to read something from local replica
+            if (dependency_port && !dependency_port->isFinished() && dependency_port->canPush())
+                dependency_port->push(Chunk());
+
             return Chunk();
         }
 
@@ -100,7 +135,7 @@ std::optional<Chunk> RemoteSource::tryGenerate()
         block = std::get<Block>(std::move(res));
     }
     else
-        block = query_executor->read();
+        block = query_executor->readBlock();
 
     if (!block)
     {

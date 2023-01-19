@@ -261,6 +261,24 @@ IProcessor::Status ResizeProcessor::prepare(const PortNumbers & updated_inputs, 
     return Status::PortFull;
 }
 
+InputPort * ResizeProcessor::getFreeInputPortIfAny()
+{
+    for (auto & port : inputs)
+        if (!port.isConnected())
+            return &port;
+
+    return nullptr;
+}
+
+OutputPort * ResizeProcessor::getFreeOutputPortIfAny()
+{
+    for (auto & port : outputs)
+        if (!port.isConnected())
+            return &port;
+
+    return nullptr;
+}
+
 IProcessor::Status StrictResizeProcessor::prepare(const PortNumbers & updated_inputs, const PortNumbers & updated_outputs)
 {
     if (!initialized)

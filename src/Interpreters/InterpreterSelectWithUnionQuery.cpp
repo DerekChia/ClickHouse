@@ -417,4 +417,11 @@ void InterpreterSelectWithUnionQuery::extendQueryLogElemImpl(QueryLogElement & e
     }
 }
 
+
+void InterpreterSelectWithUnionQuery::disableParallelReplicas()
+{
+    const_cast<Settings &>(context->getSettingsRef()).allow_experimental_parallel_reading_from_replicas = false;
+    context->getClientInfo().collaborate_with_initiator = false;
+}
+
 }

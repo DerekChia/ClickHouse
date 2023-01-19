@@ -94,12 +94,18 @@ public:
     /// Query is resent to a replica, the query itself can be modified.
     std::atomic<bool> resent_query { false };
 
+    struct ParallelReplicasToken {};
+    struct Nothing {};
+    using ReadResult = std::variant<Block, ParallelReplicasToken, int, Nothing>;
+
     /// Read next block of data. Returns empty block if query is finished.
-    Block read();
+    Block readBlock();
+
+    ReadResult read();
 
     /// Async variant of read. Returns ready block or file descriptor which may be used for polling.
     /// ReadContext is an internal read state. Pass empty ptr first time, reuse created one for every call.
-    std::variant<Block, int> read(std::unique_ptr<ReadContext> & read_context);
+    ReadResult read(std::unique_ptr<ReadContext> & read_context);
 
     /// Receive all remain packets and finish query.
     /// It should be cancelled after read returned empty block.
@@ -131,6 +137,8 @@ public:
     void setLogger(Poco::Logger * logger) { log = logger; }
 
     const Block & getHeader() const { return header; }
+
+    size_t getRemoteParallelReplicasStats() const;
 
 private:
     RemoteQueryExecutor(
@@ -231,11 +239,12 @@ private:
 
     void processReadTaskRequest();
 
-    void processMergeTreeReadTaskRequest(PartitionReadRequest request);
+    void processMergeTreeReadTaskRequest(ParallelReadRequest request);
+    void processMergeTreeInitialReadAnnounecement(InitialAllRangesAnnouncement announcement);
 
     /// Cancel query and restart it with info about duplicate UUIDs
     /// only for `allow_experimental_query_deduplication`.
-    std::variant<Block, int> restartQueryWithoutDuplicatedUUIDs(std::unique_ptr<ReadContext> * read_context = nullptr);
+    ReadResult restartQueryWithoutDuplicatedUUIDs(std::unique_ptr<ReadContext> * read_context = nullptr);
 
     /// If wasn't sent yet, send request to cancel all connections to replicas
     void tryCancel(const char * reason, std::unique_ptr<ReadContext> * read_context);
@@ -247,11 +256,10 @@ private:
     bool hasThrownException() const;
 
     /// Process packet for read and return data block if possible.
-    std::optional<Block> processPacket(Packet packet);
+    ReadResult processPacket(Packet packet);
 
     /// Reads packet by packet
     Block readPackets();
-
 };
 
 }

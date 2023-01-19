@@ -620,6 +620,31 @@ void QueryPipelineBuilder::setProgressCallback(ProgressCallback callback)
     progress_callback = callback;
 }
 
+void QueryPipelineBuilder::connectDependencies()
+{
+    std::vector<RemoteSource *> input_dependencies;
+    std::vector<DependentProcessor *> output_dependencies;
+
+    for (auto & processor : *pipe.getProcessorsPtr())
+    {
+        if (auto * remote_dependency = dynamic_cast<RemoteSource *>(processor.get()); remote_dependency)
+            input_dependencies.emplace_back(remote_dependency);
+        if (auto * merge_tree_dependency = dynamic_cast<ReadFromMergeTreeDependencyTransform *>(processor.get()); merge_tree_dependency)
+            output_dependencies.emplace_back(merge_tree_dependency);
+    }
+
+    if (input_dependencies.empty() || output_dependencies.empty())
+        return;
+
+    auto scheduler = std::make_shared<ResizeProcessor>(Block{}, input_dependencies.size(), output_dependencies.size());
+    for (auto * dependency : input_dependencies)
+        dependency->connectToScheduler(*scheduler);
+    for (auto * dependency : output_dependencies)
+        dependency->connectToScheduler(*scheduler);
+
+    pipe.getProcessorsPtr()->emplace_back(std::move(scheduler));
+}
+
 PipelineExecutorPtr QueryPipelineBuilder::execute()
 {
     if (!isCompleted())

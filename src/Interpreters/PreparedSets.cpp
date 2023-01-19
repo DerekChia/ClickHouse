@@ -89,6 +89,7 @@ bool PreparedSets::empty() const { return sets.empty(); }
 void SubqueryForSet::createSource(InterpreterSelectWithUnionQuery & interpreter, StoragePtr table_)
 {
     source = std::make_unique<QueryPlan>();
+    interpreter.disableParallelReplicas();
     interpreter.buildQueryPlan(*source);
     if (table_)
         table = table_;

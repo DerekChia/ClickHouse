@@ -2,6 +2,7 @@
 
 #include <Processors/ISource.h>
 #include <Processors/RowsBeforeLimitCounter.h>
+#include <Processors/ResizeProcessor.h>
 #include <QueryPipeline/Pipe.h>
 #include <atomic>
 
@@ -26,6 +27,8 @@ public:
     Status prepare() override;
     String getName() const override { return "Remote"; }
 
+    void connectToScheduler(ResizeProcessor & scheduler);
+
     void setRowsBeforeLimitCounter(RowsBeforeLimitCounterPtr counter) { rows_before_limit.swap(counter); }
 
     /// Stop reading from stream if output port is finished.
@@ -45,6 +48,8 @@ private:
     bool add_aggregation_info = false;
     RemoteQueryExecutorPtr query_executor;
     RowsBeforeLimitCounterPtr rows_before_limit;
+
+    OutputPort * dependency_port{nullptr};
 
     const bool async_read;
     bool is_async_state = false;

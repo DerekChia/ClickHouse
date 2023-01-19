@@ -2041,7 +2041,7 @@ UInt64 ClusterCopier::executeQueryOnCluster(
 
                 while (true)
                 {
-                    auto block = remote_query_executor->read();
+                    auto block = remote_query_executor->readBlock();
                     if (!block)
                         break;
                 }
