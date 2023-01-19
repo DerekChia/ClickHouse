@@ -92,12 +92,9 @@ void MarkRanges::serialize(WriteBuffer & out) const
     }
 }
 
-void MarkRanges::describe(WriteBuffer & out) const
+String MarkRanges::describe() const
 {
-    String result;
-    result += toString(this->size());
-    // TODO: More
-    out.write(result.c_str(), result.size());
+    return fmt::format("Size: {}, Data: {}", this->size(), fmt::join(*this, ","));
 }
 
 void MarkRanges::deserialize(ReadBuffer & in)

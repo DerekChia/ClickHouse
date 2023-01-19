@@ -333,11 +333,7 @@ ParallelReadResponse DefaultCoordinator::handleRequest(ParallelReadRequest reque
     if (response.description.empty())
         response.finish = true;
 
-    WriteBufferFromOwnString ss;
-    response.describe(ss);
-
-    LOG_TRACE(log, "Going to respond to replica {} with {}", request.replica_num, ss.str());
-
+    LOG_TRACE(log, "Going to respond to replica {} with {}", request.replica_num, response.describe());
     return response;
 }
 
@@ -367,11 +363,7 @@ template <CoordinationMode mode>
 void InOrderCoordinator<mode>::handleInitialAllRangesAnnouncement(InitialAllRangesAnnouncement announcement)
 {
     std::lock_guard lock(mutex);
-
-    WriteBufferFromOwnString ss;
-    announcement.describe(ss);
-
-    LOG_TRACE(log, "Received an announecement {}", ss.str());
+    LOG_TRACE(log, "Received an announecement {}", announcement.describe());
 
     /// To get rid of duplicates
     for (const auto & part: announcement.description)
@@ -415,10 +407,7 @@ ParallelReadResponse InOrderCoordinator<mode>::handleRequest(ParallelReadRequest
             "Replica {} decided to read in {} mode, not in {}. This is a bug",
             request.replica_num, magic_enum::enum_name(request.mode), magic_enum::enum_name(mode));
 
-
-    WriteBufferFromOwnString ssin;
-    request.describe(ssin);
-    LOG_TRACE(log, "Got request from replica {}, data {}", request.replica_num, ssin.str());
+    LOG_TRACE(log, "Got request from replica {}, data {}", request.replica_num, request.describe());
 
     ParallelReadResponse response;
     response.description = request.description;
@@ -497,11 +486,7 @@ ParallelReadResponse InOrderCoordinator<mode>::handleRequest(ParallelReadRequest
     stats[request.replica_num].number_of_requests += 1;
     stats[request.replica_num].sum_marks += overall_number_of_marks;
 
-    WriteBufferFromOwnString ss;
-    response.describe(ss);
-
-    LOG_TRACE(log, "Going to respond to replica {} with {}", request.replica_num, ss.str());
-
+    LOG_TRACE(log, "Going to respond to replica {} with {}", request.replica_num, response.describe());
     return response;
 }
 

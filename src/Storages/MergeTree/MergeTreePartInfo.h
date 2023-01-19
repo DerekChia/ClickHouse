@@ -115,7 +115,7 @@ struct MergeTreePartInfo
     }
 
     void serialize(WriteBuffer & out) const;
-    void describe(WriteBuffer & out) const;
+    String describe() const;
     void deserialize(ReadBuffer & in);
 
     /// Simple sanity check for partition ID. Checking that it's not too long or too short, doesn't contain a lot of '_'.

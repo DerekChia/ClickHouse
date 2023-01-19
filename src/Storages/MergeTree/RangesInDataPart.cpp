@@ -38,12 +38,12 @@ void RangesInDataPartsDescription::serialize(WriteBuffer & out) const
         desc.serialize(out);
 }
 
-void RangesInDataPartsDescription::describe(WriteBuffer & out) const
+String RangesInDataPartsDescription::describe() const
 {
     String result;
     for (const auto & desc : *this)
-        result += desc.describe();
-    out.write(result.c_str(), result.size());
+        result += desc.describe() + ",";
+    return result;
 }
 
 void RangesInDataPartsDescription::deserialize(ReadBuffer & in)

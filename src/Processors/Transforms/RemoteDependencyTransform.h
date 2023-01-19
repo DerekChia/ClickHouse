@@ -8,14 +8,7 @@ namespace DB
 class RemoteQueryExecutor;
 using RemoteQueryExecutorPtr = std::shared_ptr<RemoteQueryExecutor>;
 
-class DependentProcessor : public IProcessor
-{
-public:
-    using IProcessor::IProcessor;
-    virtual void connectToScheduler(ResizeProcessor & scheduler) = 0;
-};
-
-class ReadFromMergeTreeDependencyTransform : public DependentProcessor
+class ReadFromMergeTreeDependencyTransform : public IProcessor
 {
 public:
     explicit ReadFromMergeTreeDependencyTransform(const Block & header);
@@ -27,7 +20,7 @@ public:
     InputPort & getDependencyPort() { assert(dependency_port); return *dependency_port; }
     OutputPort & getOutputPort() { return outputs.front(); }
 
-    void connectToScheduler(ResizeProcessor & scheduler) override;
+    void connectToScheduler(ResizeProcessor & scheduler);
 private:
     bool has_data{false};
     Chunk chunk;

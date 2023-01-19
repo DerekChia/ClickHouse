@@ -89,7 +89,6 @@ public:
 
     void enforceSorting(SortDescription output_sort_description);
     void enforceAggregationInOrder();
-    void enforceReadingInOrder();
 
 private:
 
@@ -107,8 +106,6 @@ private:
     ThrottlerPtr throttler;
     Scalars scalars;
     Tables external_tables;
-
-    bool will_read_in_order{false};
 
     std::shared_ptr<const StorageLimitsList> storage_limits;
     Poco::Logger * log;

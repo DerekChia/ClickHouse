@@ -31,7 +31,7 @@ struct RangesInDataPartsDescription: public std::deque<RangesInDataPartDescripti
     using std::deque<RangesInDataPartDescription>::deque;
 
     void serialize(WriteBuffer & out) const;
-    void describe(WriteBuffer & out) const;
+    String describe() const;
     void deserialize(ReadBuffer & in);
 
     void merge(RangesInDataPartsDescription & other);

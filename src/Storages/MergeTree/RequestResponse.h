@@ -46,7 +46,7 @@ struct ParallelReadRequest
     RangesInDataPartsDescription description;
 
     void serialize(WriteBuffer & out) const;
-    void describe(WriteBuffer & out) const;
+    String describe() const;
     void deserialize(ReadBuffer & in);
     void merge(ParallelReadRequest & other);
 };
@@ -57,7 +57,7 @@ struct ParallelReadResponse
     RangesInDataPartsDescription description;
 
     void serialize(WriteBuffer & out) const;
-    void describe(WriteBuffer & out) const;
+    String describe() const;
     void deserialize(ReadBuffer & in);
 };
 
@@ -68,7 +68,7 @@ struct InitialAllRangesAnnouncement
     size_t replica_num;
 
     void serialize(WriteBuffer & out) const;
-    void describe(WriteBuffer & out);
+    String describe();
     void deserialize(ReadBuffer & in);
 };
 

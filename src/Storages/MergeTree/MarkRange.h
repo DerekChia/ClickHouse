@@ -38,7 +38,7 @@ struct MarkRanges : public std::deque<MarkRange>
     size_t getNumberOfMarks() const;
 
     void serialize(WriteBuffer & out) const;
-    void describe(WriteBuffer & out) const;
+    String describe() const;
     void deserialize(ReadBuffer & in);
 };
 

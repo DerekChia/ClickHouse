@@ -11,7 +11,7 @@ namespace ErrorCodes
 }
 
 ReadFromMergeTreeDependencyTransform::ReadFromMergeTreeDependencyTransform(const Block & header)
-    : DependentProcessor(InputPorts(1, header), OutputPorts(1, header))
+    : IProcessor(InputPorts(1, header), OutputPorts(1, header))
     , data_port(&inputs.front())
 {
 }

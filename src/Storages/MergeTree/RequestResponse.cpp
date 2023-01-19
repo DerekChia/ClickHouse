@@ -30,14 +30,13 @@ void ParallelReadRequest::serialize(WriteBuffer & out) const
 }
 
 
-void ParallelReadRequest::describe(WriteBuffer & out) const
+String ParallelReadRequest::describe() const
 {
     String result;
     result += fmt::format("replica_num: {} \n", replica_num);
     result += fmt::format("min_num_of_marks: {} \n", min_number_of_marks);
-    out.write(result.c_str(), result.size());
-
-    description.describe(out);
+    result += description.describe();
+    return result;
 }
 
 void ParallelReadRequest::deserialize(ReadBuffer & in)
@@ -73,12 +72,12 @@ void ParallelReadResponse::serialize(WriteBuffer & out) const
     description.serialize(out);
 }
 
-void ParallelReadResponse::describe(WriteBuffer & out) const
+String ParallelReadResponse::describe() const
 {
     String result;
     result += fmt::format("finish: {} \n", finish);
-    out.write(result.c_str(), result.size());
-    description.describe(out);
+    result += description.describe();
+    return result;
 }
 
 void ParallelReadResponse::deserialize(ReadBuffer & in)
@@ -102,11 +101,12 @@ void InitialAllRangesAnnouncement::serialize(WriteBuffer & out) const
 }
 
 
-void InitialAllRangesAnnouncement::describe(WriteBuffer & out)
+String InitialAllRangesAnnouncement::describe()
 {
-    description.describe(out);
-    auto result = fmt::format("----------\nReceived from {} replica\n", replica_num);
-    out.write(result.c_str(), result.size());
+    String result;
+    result += description.describe();
+    result += fmt::format("----------\nReceived from {} replica\n", replica_num);
+    return result;
 }
 
 void InitialAllRangesAnnouncement::deserialize(ReadBuffer & in)

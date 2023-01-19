@@ -3900,7 +3900,7 @@ WriteSettings Context::getWriteSettings() const
     return res;
 }
 
-bool Context::useParallelReplicas() const
+bool Context::canUseParallelReplicas() const
 {
     const auto & settings = getSettingsRef();
     return settings.allow_experimental_parallel_reading_from_replicas

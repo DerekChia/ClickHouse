@@ -22,6 +22,7 @@
 #include <Interpreters/TableJoin.h>
 #include <Common/typeid_cast.h>
 #include <Common/CurrentThread.h>
+#include "Processors/Transforms/RemoteDependencyTransform.h"
 #include <Processors/ConcatProcessor.h>
 #include <Core/SortDescription.h>
 #include <QueryPipeline/narrowPipe.h>
@@ -623,7 +624,7 @@ void QueryPipelineBuilder::setProgressCallback(ProgressCallback callback)
 void QueryPipelineBuilder::connectDependencies()
 {
     std::vector<RemoteSource *> input_dependencies;
-    std::vector<DependentProcessor *> output_dependencies;
+    std::vector<ReadFromMergeTreeDependencyTransform *> output_dependencies;
 
     for (auto & processor : *pipe.getProcessorsPtr())
     {

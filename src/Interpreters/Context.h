@@ -1083,7 +1083,7 @@ public:
     WriteSettings getWriteSettings() const;
 
     /** There are multiple conditions that have to be met to be able to use parallel replicas */
-    bool useParallelReplicas() const;
+    bool canUseParallelReplicas() const;
 
 private:
     std::unique_lock<std::recursive_mutex> getLock() const;

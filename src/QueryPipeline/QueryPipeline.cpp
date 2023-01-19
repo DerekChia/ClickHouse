@@ -1,7 +1,4 @@
 #include <queue>
-
-#include <Common/logger_useful.h>
-
 #include <QueryPipeline/Chain.h>
 #include <Processors/Formats/IOutputFormat.h>
 #include <Processors/IProcessor.h>
@@ -24,8 +21,6 @@
 #include <Processors/Transforms/StreamInQueryResultCacheTransform.h>
 #include <Processors/Transforms/ExpressionTransform.h>
 #include <Processors/QueryPlan/ReadFromPreparedSource.h>
-#include "IO/WriteBufferFromString.h"
-#include "QueryPipeline/printPipeline.h"
 
 
 namespace DB
@@ -50,8 +45,8 @@ static void checkInput(const InputPort & input, const ProcessorPtr & processor)
     if (!input.isConnected())
         throw Exception(
             ErrorCodes::LOGICAL_ERROR,
-            "Cannot create QueryPipeline because {} has disconnected input. In total it has {} input ports",
-            processor->getName(), processor->getInputs().size());
+            "Cannot create QueryPipeline because {} has disconnected input",
+            processor->getName());
 }
 
 static void checkOutput(const OutputPort & output, const ProcessorPtr & processor)
@@ -87,34 +82,23 @@ static void checkPulling(
     bool found_output = false;
     bool found_totals = false;
     bool found_extremes = false;
-
-    try
+    for (const auto & processor : processors)
     {
-        for (const auto & processor : processors)
-        {
-            for (const auto & in : processor->getInputs())
-                checkInput(in, processor);
+        for (const auto & in : processor->getInputs())
+            checkInput(in, processor);
 
-            for (const auto & out : processor->getOutputs())
-            {
-                if (&out == output)
-                    found_output = true;
-                else if (totals && &out == totals)
-                    found_totals = true;
-                else if (extremes && &out == extremes)
-                    found_extremes = true;
-                else
-                    checkOutput(out, processor);
-            }
+        for (const auto & out : processor->getOutputs())
+        {
+            if (&out == output)
+                found_output = true;
+            else if (totals && &out == totals)
+                found_totals = true;
+            else if (extremes && &out == extremes)
+                found_extremes = true;
+            else
+                checkOutput(out, processor);
         }
     }
-    catch (...)
-    {
-        WriteBufferFromOwnString ss;
-        printPipeline(processors, ss);
-        LOG_FATAL(&Poco::Logger::get("checkPulling"), "Checking pipeline: {}", ss.str());
-    }
-
 
     if (!found_output)
         throw Exception(

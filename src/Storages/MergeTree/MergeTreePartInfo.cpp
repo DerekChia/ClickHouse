@@ -264,12 +264,9 @@ void MergeTreePartInfo::serialize(WriteBuffer & out) const
 }
 
 
-void MergeTreePartInfo::describe(WriteBuffer & out) const
+String MergeTreePartInfo::describe() const
 {
-    String result;
-    result += fmt::format("partition_id: {}", partition_id);
-    // TODO: More fields
-    out.write(result.c_str(), result.size());
+    return getPartNameV1();
 }
 
 

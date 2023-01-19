@@ -314,11 +314,6 @@ void ReadFromParallelRemoteReplicasStep::enforceAggregationInOrder()
     DB::enforceAggregationInOrder(stage, *context);
 }
 
-void ReadFromParallelRemoteReplicasStep:: enforceReadingInOrder()
-{
-    will_read_in_order = true;
-}
-
 void ReadFromParallelRemoteReplicasStep::initializePipeline(QueryPipelineBuilder & pipeline, const BuildQueryPipelineSettings &)
 {
     Pipes pipes;
