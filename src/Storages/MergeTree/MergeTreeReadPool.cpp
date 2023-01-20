@@ -144,7 +144,7 @@ MergeTreeReadTaskPtr MergeTreeReadPool::getTask(size_t thread)
         : std::make_unique<MergeTreeBlockSizePredictor>(*per_part.size_predictor); /// make a copy
 
     return std::make_unique<MergeTreeReadTask>(
-        part.data_part, ranges_to_get_from_part, part.part_index_in_query, column_names,
+        part.data_part, ranges_to_get_from_part, part.part_index_in_query,
         per_part.column_name_set, per_part.task_columns,
         prewhere_info && prewhere_info->remove_prewhere_column, std::move(curr_task_size_predictor));
 }

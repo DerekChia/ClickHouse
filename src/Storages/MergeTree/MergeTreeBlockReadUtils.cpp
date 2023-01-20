@@ -138,7 +138,6 @@ MergeTreeReadTask::MergeTreeReadTask(
     const DataPartPtr & data_part_,
     const MarkRanges & mark_ranges_,
     size_t part_index_in_query_,
-    const Names & ordered_names_,
     const NameSet & column_name_set_,
     const MergeTreeReadTaskColumns & task_columns_,
     bool remove_prewhere_column_,
@@ -146,7 +145,6 @@ MergeTreeReadTask::MergeTreeReadTask(
     : data_part{data_part_}
     , mark_ranges{mark_ranges_}
     , part_index_in_query{part_index_in_query_}
-    , ordered_names{ordered_names_}
     , column_name_set{column_name_set_}
     , task_columns{task_columns_}
     , remove_prewhere_column{remove_prewhere_column_}

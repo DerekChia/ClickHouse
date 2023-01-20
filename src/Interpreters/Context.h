@@ -22,7 +22,6 @@
 #include <Server/HTTP/HTTPContext.h>
 #include <Storages/ColumnsDescription.h>
 #include <Storages/IStorage_fwd.h>
-#include <Storages/MergeTree/ParallelReplicasReadingCoordinator.h>
 
 #include "config.h"
 
@@ -180,6 +179,9 @@ using MergeTreeReadTaskCallback = std::function<std::optional<ParallelReadRespon
 
 class TemporaryDataOnDiskScope;
 using TemporaryDataOnDiskScopePtr = std::shared_ptr<TemporaryDataOnDiskScope>;
+
+class ParallelReplicasReadingCoordinator;
+using ParallelReplicasReadingCoordinatorPtr = std::shared_ptr<ParallelReplicasReadingCoordinator>;
 
 #if USE_ROCKSDB
 class MergeTreeMetadataCache;

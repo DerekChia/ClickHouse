@@ -172,7 +172,6 @@ MergeTreeReadTaskPtr MergeTreeReadPoolParallelReplicas::getTask()
         part.data_part,
         ranges_to_read,
         part.part_index_in_query,
-        column_names,
         per_part.column_name_set,
         per_part.task_columns,
         prewhere_info && prewhere_info->remove_prewhere_column,

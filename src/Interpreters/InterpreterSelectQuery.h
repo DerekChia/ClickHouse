@@ -16,7 +16,6 @@
 #include <QueryPipeline/Pipe.h>
 
 #include <Columns/FilterDescription.h>
-#include "Storages/MergeTree/RequestResponse.h"
 
 namespace Poco
 {
