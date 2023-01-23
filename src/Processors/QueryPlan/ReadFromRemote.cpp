@@ -13,6 +13,7 @@
 #include <Interpreters/ActionsDAG.h>
 #include <Interpreters/InterpreterSelectQuery.h>
 #include <IO/ConnectionTimeoutsContext.h>
+#include "Common/logger_useful.h"
 #include <Common/checkStackSize.h>
 #include <Core/QueryProcessingStage.h>
 #include <Client/ConnectionPool.h>
@@ -320,8 +321,21 @@ void ReadFromParallelRemoteReplicasStep::initializePipeline(QueryPipelineBuilder
     const Settings & current_settings = context->getSettingsRef();
     auto timeouts = ConnectionTimeouts::getTCPTimeoutsWithFailover(current_settings);
 
+    size_t all_replicas_count = current_settings.max_parallel_replicas;
+    if (all_replicas_count > shard_info.all_addresses.size())
+    {
+        LOG_WARNING(&Poco::Logger::get("ReadFromParallelRemoteReplicasStep"),
+            "The number of replicas requested ({}) is bigger than the real number available in the cluster ({}). "\
+            "Will use the latter number to execute the query.", current_settings.max_parallel_replicas, shard_info.all_addresses.size());
+        all_replicas_count = shard_info.all_addresses.size();
+    }
+
+    /// The requested number of replicas to read from could be less
+    /// than the total number of replicas in the shard
+    /// And we have to pick only "remote" ones
+    /// So, that's why this loop looks like this.
     size_t replica_num = 0;
-    while (pipes.size() != current_settings.max_parallel_replicas - 1)
+    while (pipes.size() != all_replicas_count - 1)
     {
         if (shard_info.all_addresses[replica_num].is_local)
         {
@@ -331,7 +345,7 @@ void ReadFromParallelRemoteReplicasStep::initializePipeline(QueryPipelineBuilder
 
         IConnections::ReplicaInfo replica_info
         {
-            .all_replicas_count = current_settings.max_parallel_replicas,
+            .all_replicas_count = all_replicas_count,
             /// Replica 0 is threated as local always
             .number_of_current_replica = pipes.size() + 1
         };
@@ -370,7 +384,6 @@ void ReadFromParallelRemoteReplicasStep::addPipeForSingeReplica(Pipes & pipes, s
     }
 
     String query_string = formattedAST(query_ast);
-
 
     assert(stage != QueryProcessingStage::Complete);
     assert(output_stream);

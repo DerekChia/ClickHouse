@@ -36,8 +36,7 @@ try
             all_mark_ranges.clear();
         }
     }
-
-    if (pool)
+    else
     {
         auto description = RangesInDataPartDescription{
             .info = data_part->info,

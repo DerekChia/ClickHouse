@@ -48,7 +48,7 @@ private:
     std::shared_ptr<MergeTreeReadPool> pool;
 
     /// Last part read in this thread
-    std::string last_readed_part_name;
+    std::string last_read_part_name;
 };
 
 }

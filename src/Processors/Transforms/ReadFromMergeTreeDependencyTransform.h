@@ -8,6 +8,15 @@ namespace DB
 class RemoteQueryExecutor;
 using RemoteQueryExecutorPtr = std::shared_ptr<RemoteQueryExecutor>;
 
+/// A tiny class which is used for reading with multiple replicas in parallel.
+/// Motivation is that we don't have a full control on how
+/// processors are sheduled across threads and there could be a situation
+/// when all available threads will read from local replica and will just
+/// forget about remote replicas existense. That is not what we want.
+/// For parallel replicas we have to constantly answer to incoming requests
+/// with a set of marks to read.
+/// With the help of this class, we explicitly connect a "local" source with
+/// all the remote ones. And thus achieve fairness somehow.
 class ReadFromMergeTreeDependencyTransform : public IProcessor
 {
 public:

@@ -3900,7 +3900,16 @@ WriteSettings Context::getWriteSettings() const
     return res;
 }
 
-bool Context::canUseParallelReplicas() const
+bool Context::canUseParallelReplicasOnInitiator() const
+{
+    const auto & settings = getSettingsRef();
+    return settings.allow_experimental_parallel_reading_from_replicas
+        && settings.max_parallel_replicas > 1
+        && !settings.use_hedged_requests
+        && !getClientInfo().collaborate_with_initiator;
+}
+
+bool Context::canUseParallelReplicasOnFollower() const
 {
     const auto & settings = getSettingsRef();
     return settings.allow_experimental_parallel_reading_from_replicas

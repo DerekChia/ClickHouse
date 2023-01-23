@@ -1,9 +1,12 @@
 #include <Processors/QueryPlan/DistributedCreateLocalPlan.h>
+
+#include "config_version.h"
 #include <Common/checkStackSize.h>
-#include <Processors/QueryPlan/ExpressionStep.h>
+#include <Core/ProtocolDefines.h>
 #include <Interpreters/ActionsDAG.h>
 #include <Interpreters/InterpreterSelectQuery.h>
 #include <Interpreters/InterpreterSelectQueryAnalyzer.h>
+#include <Processors/QueryPlan/ExpressionStep.h>
 
 namespace DB
 {

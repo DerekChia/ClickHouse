@@ -58,17 +58,6 @@ public:
     virtual ~ImplInterface() = default;
     virtual ParallelReadResponse handleRequest(ParallelReadRequest request) = 0;
     virtual void handleInitialAllRangesAnnouncement(InitialAllRangesAnnouncement announcement) = 0;
-    size_t getRemoteParallelReplicasStats()
-    {
-        std::lock_guard lock(mutex);
-
-        size_t result = 0;
-        /// Not to include local replica
-        for (size_t i = 1; i < stats.size(); ++i)
-            result += stats[i].number_of_requests;
-
-        return result;
-    }
 };
 
 
@@ -152,9 +141,6 @@ void DefaultCoordinator::updateReadingState(const InitialAllRangesAnnouncement &
     /// To get rid of duplicates
     for (const auto & part: announcement.description)
     {
-        auto covering_or_the_same_it = std::find_if(all_parts_to_read.begin(), all_parts_to_read.end(),
-            [&part] (const Part & other) { return !other.description.info.isDisjoint(part.info); });
-
         auto the_same_it = std::find_if(all_parts_to_read.begin(), all_parts_to_read.end(),
             [&part] (const Part & other) { return other.description.info.getPartNameV1() == part.info.getPartNameV1(); });
 
@@ -164,6 +150,9 @@ void DefaultCoordinator::updateReadingState(const InitialAllRangesAnnouncement &
             the_same_it->replicas.insert(announcement.replica_num);
             continue;
         }
+
+        auto covering_or_the_same_it = std::find_if(all_parts_to_read.begin(), all_parts_to_read.end(),
+            [&part] (const Part & other) { return !other.description.info.isDisjoint(part.info); });
 
         /// It is covering part or we have covering - skip it
         if (covering_or_the_same_it != all_parts_to_read.end())
@@ -246,21 +235,21 @@ void DefaultCoordinator::selectPartsAndRanges(const PartRefs & container, size_t
 {
     for (const auto & part : container)
     {
-        if (std::find(part->replicas.begin(), part->replicas.end(), replica_num) == part->replicas.end())
-        {
-            LOG_TEST(log, "Not found part {} on replica {}", part->description.info.getPartNameV1(), replica_num);
-            continue;
-        }
-
         if (current_mark_size >= min_number_of_marks)
         {
             LOG_TEST(log, "Current mark size {} is bigger than min_number_marks {}", current_mark_size, min_number_of_marks);
-            continue;
+            break;
         }
 
         if (part->description.ranges.empty())
         {
             LOG_TEST(log, "Part {} is already empty in reading state", part->description.info.getPartNameV1());
+            continue;
+        }
+
+        if (std::find(part->replicas.begin(), part->replicas.end(), replica_num) == part->replicas.end())
+        {
+            LOG_TEST(log, "Not found part {} on replica {}", part->description.info.getPartNameV1(), replica_num);
             continue;
         }
 
@@ -271,15 +260,13 @@ void DefaultCoordinator::selectPartsAndRanges(const PartRefs & container, size_t
 
         while (!part->description.ranges.empty() && current_mark_size < min_number_of_marks)
         {
-            auto range = part->description.ranges.front();
+            auto & range = part->description.ranges.front();
 
             if (range.getNumberOfMarks() > min_number_of_marks)
             {
                 auto new_range = range;
                 range.begin += min_number_of_marks;
                 new_range.end = new_range.begin + min_number_of_marks;
-
-                part->description.ranges.front() = range;
 
                 response.description.back().ranges.emplace_back(new_range);
                 current_mark_size += new_range.getNumberOfMarks();
@@ -368,9 +355,6 @@ void InOrderCoordinator<mode>::handleInitialAllRangesAnnouncement(InitialAllRang
     /// To get rid of duplicates
     for (const auto & part: announcement.description)
     {
-        auto covering_or_the_same_it = std::find_if(all_parts_to_read.begin(), all_parts_to_read.end(),
-            [&part] (const Part & other) { return other.description.info.contains(part.info) ||  part.info.contains(other.description.info); });
-
         auto the_same_it = std::find_if(all_parts_to_read.begin(), all_parts_to_read.end(),
             [&part] (const Part & other) { return other.description.info == part.info; });
 
@@ -380,6 +364,9 @@ void InOrderCoordinator<mode>::handleInitialAllRangesAnnouncement(InitialAllRang
             the_same_it->replicas.insert(announcement.replica_num);
             continue;
         }
+
+        auto covering_or_the_same_it = std::find_if(all_parts_to_read.begin(), all_parts_to_read.end(),
+            [&part] (const Part & other) { return other.description.info.contains(part.info) ||  part.info.contains(other.description.info); });
 
         /// It is covering part or we have covering - skip it
         if (covering_or_the_same_it != all_parts_to_read.end())
@@ -451,8 +438,7 @@ ParallelReadResponse InOrderCoordinator<mode>::handleRequest(ParallelReadRequest
                 global_part_it->description.ranges.pop_back();
             }
         }
-
-        if (mode == CoordinationMode::WithOrder)
+        else if constexpr (mode == CoordinationMode::WithOrder)
         {
             while (!global_part_it->description.ranges.empty() && current_mark_size < request.min_number_of_marks)
             {
@@ -501,13 +487,15 @@ void ParallelReplicasReadingCoordinator::handleInitialAllRangesAnnouncement(Init
 
 ParallelReadResponse ParallelReplicasReadingCoordinator::handleRequest(ParallelReadRequest request)
 {
+    if (!pimpl)
+        initialize();
+
     return pimpl->handleRequest(std::move(request));
 }
 
 void ParallelReplicasReadingCoordinator::setMode(CoordinationMode mode_)
 {
     mode = mode_;
-    initialize();
 }
 
 void ParallelReplicasReadingCoordinator::initialize()
@@ -524,11 +512,6 @@ void ParallelReplicasReadingCoordinator::initialize()
             pimpl = std::make_unique<InOrderCoordinator<CoordinationMode::ReverseOrder>>(replicas_count);
             return;
     }
-}
-
-size_t ParallelReplicasReadingCoordinator::getRemoteParallelReplicasStats()
-{
-    return pimpl->getRemoteParallelReplicasStats();
 }
 
 ParallelReplicasReadingCoordinator::ParallelReplicasReadingCoordinator(size_t replicas_count_) : replicas_count(replicas_count_) {}

@@ -56,19 +56,19 @@ void MergeTreeThreadSelectAlgorithm::finalizeNewTask()
             owned_uncompressed_cache = storage.getContext()->getUncompressedCache();
         owned_mark_cache = storage.getContext()->getMarkCache();
     }
-    else if (part_name != last_readed_part_name)
+    else if (part_name != last_read_part_name)
     {
         value_size_map = reader->getAvgValueSizeHints();
     }
 
-    const bool init_new_readers = !reader || part_name != last_readed_part_name;
+    const bool init_new_readers = !reader || part_name != last_read_part_name;
     if (init_new_readers)
     {
         initializeMergeTreeReadersForPart(task->data_part, task->task_columns, metadata_snapshot,
             task->mark_ranges, value_size_map, profile_callback);
     }
 
-    last_readed_part_name = part_name;
+    last_read_part_name = part_name;
 }
 
 

@@ -212,16 +212,7 @@ void StorageMergeTree::read(
     size_t max_block_size,
     size_t num_streams)
 {
-    /// If true, then we will ask initiator if we can read chosen ranges
-    bool enable_parallel_reading = local_context->getClientInfo().collaborate_with_initiator;
-
-    if (enable_parallel_reading)
-        LOG_TRACE(log, "Parallel reading from replicas enabled: {}", enable_parallel_reading);
-
-    const auto & settings = local_context->getSettingsRef();
-    bool parallel_replicas = settings.max_parallel_replicas > 1 && settings.allow_experimental_parallel_reading_from_replicas && !settings.use_hedged_requests && !local_context->getClientInfo().collaborate_with_initiator;
-
-    if (parallel_replicas)
+    if (local_context->canUseParallelReplicasOnInitiator())
     {
         auto table_id = getStorageID();
 
@@ -249,7 +240,7 @@ void StorageMergeTree::read(
     else
     {
         if (auto plan = reader.read(
-            column_names, storage_snapshot, query_info, local_context, max_block_size, num_streams, processed_stage, nullptr, enable_parallel_reading))
+            column_names, storage_snapshot, query_info, local_context, max_block_size, num_streams, processed_stage, nullptr, /*enable_parallel_reading*/true))
             query_plan = std::move(*plan);
     }
 

@@ -570,11 +570,6 @@ void RemoteQueryExecutor::cancel(std::unique_ptr<ReadContext> * read_context)
     tryCancel("Cancelling query", read_context);
 }
 
-size_t RemoteQueryExecutor::getRemoteParallelReplicasStats() const
-{
-    return parallel_reading_coordinator->getRemoteParallelReplicasStats();
-}
-
 void RemoteQueryExecutor::sendScalars()
 {
     connections->sendScalarsData(scalars);

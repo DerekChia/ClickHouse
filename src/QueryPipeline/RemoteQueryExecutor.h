@@ -180,8 +180,6 @@ public:
 
     const Block & getHeader() const { return header; }
 
-    size_t getRemoteParallelReplicasStats() const;
-
 private:
     RemoteQueryExecutor(
         const String & query_, const Block & header_, ContextPtr context_,

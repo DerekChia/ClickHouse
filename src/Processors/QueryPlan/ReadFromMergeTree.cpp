@@ -246,7 +246,9 @@ Pipe ReadFromMergeTree::readFromPoolParallelReplicas(
 
         pipes.emplace_back(std::move(source));
 
-        if (is_parallel_reading_from_replicas && context->getClientInfo().interface == ClientInfo::Interface::LOCAL)
+        /// Add a special dependency transform which will be connected later with
+        /// all RemoteSources through a simple scheduler (ResizeProcessor)
+        if (context->getClientInfo().interface == ClientInfo::Interface::LOCAL)
         {
             pipes.back().addSimpleTransform([&](const Block & header) -> ProcessorPtr
             {
@@ -274,7 +276,6 @@ Pipe ReadFromMergeTree::readFromPool(
         total_rows = query_info.limit;
 
     const auto & settings = context->getSettingsRef();
-    const auto & client_info = context->getClientInfo();
     MergeTreeReadPool::BackoffSettings backoff_settings(settings);
 
     /// round min_marks_to_read up to nearest multiple of block_size expressed in marks
@@ -313,11 +314,7 @@ Pipe ReadFromMergeTree::readFromPool(
 
         auto source = std::make_shared<MergeTreeSource>(std::move(algorithm));
 
-        /// Set the approximate number of rows for the first source only
-        /// In case of parallel processing on replicas do not set approximate rows at all.
-        /// Because the value will be identical on every replicas and will be accounted
-        /// multiple times (settings.max_parallel_replicas times more)
-        if (i == 0 && !client_info.collaborate_with_initiator)
+        if (i == 0)
             source->addTotalRowsApprox(total_rows);
 
         pipes.emplace_back(std::move(source));
@@ -509,7 +506,7 @@ Pipe ReadFromMergeTree::spreadMarkRangesAmongStreams(
             num_streams = std::max((info.sum_marks + info.min_marks_for_concurrent_read - 1) / info.min_marks_for_concurrent_read, parts_with_ranges.size());
     }
 
-    auto read_type = all_ranges_callback ? ReadType::ParallelReplicas : ReadType::Default;
+    auto read_type = is_parallel_reading_from_replicas ? ReadType::ParallelReplicas : ReadType::Default;
 
     return read(std::move(parts_with_ranges), column_names, read_type,
                 num_streams, info.min_marks_for_concurrent_read, info.use_uncompressed_cache);

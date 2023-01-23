@@ -257,7 +257,7 @@ void executeQueryWithParallelReplicas(
     auto shard_info = not_optimized_cluster->getShardsInfo().front();
 
     const auto & settings = context->getSettingsRef();
-    auto all_replicas_count = settings.max_parallel_replicas;
+    auto all_replicas_count = std::min(static_cast<size_t>(settings.max_parallel_replicas), shard_info.all_addresses.size());
     auto coordinator = std::make_shared<ParallelReplicasReadingCoordinator>(all_replicas_count);
     auto remote_plan = std::make_unique<QueryPlan>();
     auto plans = std::vector<QueryPlanPtr>();

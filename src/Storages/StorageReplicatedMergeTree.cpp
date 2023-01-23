@@ -4542,9 +4542,6 @@ void StorageReplicatedMergeTree::read(
     const size_t max_block_size,
     const size_t num_streams)
 {
-    /// If true, then we will ask initiator if we can read chosen ranges
-    const bool enable_parallel_reading = local_context->getClientInfo().collaborate_with_initiator;
-
     SCOPE_EXIT({
         /// Now, copy of parts that is required for the query, stored in the processors,
         /// while snapshot_data.parts includes all parts, even one that had been filtered out with partition pruning,
@@ -4563,15 +4560,12 @@ void StorageReplicatedMergeTree::read(
         auto max_added_blocks = std::make_shared<ReplicatedMergeTreeQuorumAddedParts::PartitionIdToMaxBlock>(getMaxAddedBlocks());
         if (auto plan = reader.read(
                 column_names, storage_snapshot, query_info, local_context,
-                max_block_size, num_streams, processed_stage, std::move(max_added_blocks), enable_parallel_reading))
+                max_block_size, num_streams, processed_stage, std::move(max_added_blocks), /*enable_parallel_reading*/false))
             query_plan = std::move(*plan);
         return;
     }
 
-    const auto & settings = local_context->getSettingsRef();
-    bool parallel_replicas = settings.max_parallel_replicas > 1 && settings.allow_experimental_parallel_reading_from_replicas && !settings.use_hedged_requests && !local_context->getClientInfo().collaborate_with_initiator;
-
-    if (parallel_replicas)
+    if (local_context->canUseParallelReplicasOnInitiator())
     {
         auto table_id = getStorageID();
 
@@ -4599,7 +4593,7 @@ void StorageReplicatedMergeTree::read(
     else
     {
         if (auto plan = reader.read(
-            column_names, storage_snapshot, query_info, local_context, max_block_size, num_streams, processed_stage, nullptr, enable_parallel_reading))
+            column_names, storage_snapshot, query_info, local_context, max_block_size, num_streams, processed_stage, nullptr, /*enable_parallel_reading*/true))
             query_plan = std::move(*plan);
     }
 }
