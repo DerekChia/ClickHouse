@@ -2,7 +2,6 @@
 
 #include <Processors/ISource.h>
 #include <Processors/RowsBeforeLimitCounter.h>
-#include <Processors/ResizeProcessor.h>
 #include <QueryPipeline/Pipe.h>
 #include <atomic>
 
@@ -27,7 +26,7 @@ public:
     Status prepare() override;
     String getName() const override { return "Remote"; }
 
-    void connectToScheduler(ResizeProcessor & scheduler);
+    void connectToScheduler(InputPort & input_port);
 
     void setRowsBeforeLimitCounter(RowsBeforeLimitCounterPtr counter) { rows_before_limit.swap(counter); }
 

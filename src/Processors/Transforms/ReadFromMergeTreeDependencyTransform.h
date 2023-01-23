@@ -1,6 +1,5 @@
 #pragma once
 #include <Processors/IProcessor.h>
-#include <Processors/ResizeProcessor.h>
 
 namespace DB
 {
@@ -29,7 +28,7 @@ public:
     InputPort & getDependencyPort() { assert(dependency_port); return *dependency_port; }
     OutputPort & getOutputPort() { return outputs.front(); }
 
-    void connectToScheduler(ResizeProcessor & scheduler);
+    void connectToScheduler(OutputPort & output_port);
 private:
     bool has_data{false};
     Chunk chunk;

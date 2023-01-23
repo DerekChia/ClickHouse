@@ -240,7 +240,9 @@ void StorageMergeTree::read(
     else
     {
         if (auto plan = reader.read(
-            column_names, storage_snapshot, query_info, local_context, max_block_size, num_streams, processed_stage, nullptr, /*enable_parallel_reading*/true))
+            column_names, storage_snapshot, query_info,
+            local_context, max_block_size, num_streams,
+            processed_stage, nullptr, /*enable_parallel_reading*/local_context->canUseParallelReplicasOnFollower()))
             query_plan = std::move(*plan);
     }
 

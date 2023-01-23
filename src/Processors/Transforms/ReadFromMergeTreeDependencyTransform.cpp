@@ -1,6 +1,7 @@
 #include <Processors/Transforms/ReadFromMergeTreeDependencyTransform.h>
 
 #include <QueryPipeline/RemoteQueryExecutor.h>
+#include "Processors/Port.h"
 
 namespace DB
 {
@@ -16,15 +17,11 @@ ReadFromMergeTreeDependencyTransform::ReadFromMergeTreeDependencyTransform(const
 {
 }
 
-void ReadFromMergeTreeDependencyTransform::connectToScheduler(ResizeProcessor & scheduler)
+void ReadFromMergeTreeDependencyTransform::connectToScheduler(OutputPort & output_port)
 {
     inputs.emplace_back(Block{}, this);
     dependency_port = &inputs.back();
-    auto * free_port = scheduler.getFreeOutputPortIfAny();
-    if (!free_port)
-        throw Exception(ErrorCodes::LOGICAL_ERROR, "There are no free output ports in scheduler. This is a bug");
-
-    connect(*free_port, *dependency_port);
+    connect(output_port, *dependency_port);
 }
 
 IProcessor::Status ReadFromMergeTreeDependencyTransform::prepare()

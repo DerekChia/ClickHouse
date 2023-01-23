@@ -34,9 +34,6 @@ public:
     Status prepare() override;
     Status prepare(const PortNumbers &, const PortNumbers &) override;
 
-    InputPort * getFreeInputPortIfAny();
-    OutputPort * getFreeOutputPortIfAny();
-
 private:
     InputPorts::iterator current_input;
     OutputPorts::iterator current_output;

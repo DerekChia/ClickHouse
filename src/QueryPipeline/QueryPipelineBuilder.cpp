@@ -636,11 +636,21 @@ void QueryPipelineBuilder::connectDependencies()
     if (input_dependencies.empty() || output_dependencies.empty())
         return;
 
+    auto input_dependency_iter = input_dependencies.begin();
+    auto output_dependency_iter = output_dependencies.begin();
     auto scheduler = std::make_shared<ResizeProcessor>(Block{}, input_dependencies.size(), output_dependencies.size());
-    for (auto * dependency : input_dependencies)
-        dependency->connectToScheduler(*scheduler);
-    for (auto * dependency : output_dependencies)
-        dependency->connectToScheduler(*scheduler);
+
+    for (auto & scheduler_input : scheduler->getInputs())
+    {
+        (*input_dependency_iter)->connectToScheduler(scheduler_input);
+        ++input_dependency_iter;
+    }
+
+    for (auto & scheduler_output : scheduler->getOutputs())
+    {
+        (*output_dependency_iter)->connectToScheduler(scheduler_output);
+        ++output_dependency_iter;
+    }
 
     pipe.getProcessorsPtr()->emplace_back(std::move(scheduler));
 }

@@ -28,15 +28,11 @@ RemoteSource::RemoteSource(RemoteQueryExecutorPtr executor, bool add_aggregation
 
 RemoteSource::~RemoteSource() = default;
 
-void RemoteSource::connectToScheduler(ResizeProcessor & scheduler)
+void RemoteSource::connectToScheduler(InputPort & input_port)
 {
     outputs.emplace_back(Block{}, this);
     dependency_port = &outputs.back();
-    auto * free_port = scheduler.getFreeInputPortIfAny();
-    if (!free_port)
-        throw Exception(ErrorCodes::LOGICAL_ERROR, "There are no free input ports in scheduler. This is a bug");
-
-    connect(*dependency_port, *free_port);
+    connect(*dependency_port, input_port);
 }
 
 void RemoteSource::setStorageLimits(const std::shared_ptr<const StorageLimitsList> & storage_limits_)
