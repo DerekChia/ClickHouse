@@ -600,7 +600,7 @@ public:
         }
 
         /// It's safe to get name of any part
-        const String & getPartNameV1() const { return part->name; }
+        const String & getPartName() const { return part->name; }
 
         DataPartPtr getPartIfItWasActive() const
         {

@@ -266,8 +266,9 @@ Block RemoteQueryExecutor::readBlock()
     while (true)
     {
         auto res = read();
-        if (std::holds_alternative<Block>(res))
-            return std::get<Block>(res);
+
+        if (res.getType() == ReadResult::Type::Data)
+            return res.getBlock();
     }
 }
 
@@ -279,23 +280,23 @@ RemoteQueryExecutor::ReadResult RemoteQueryExecutor::read()
         sendQuery();
 
         if (context->getSettingsRef().skip_unavailable_shards && (0 == connections->size()))
-            return {};
+            return ReadResult(Block());
     }
 
     while (true)
     {
         std::lock_guard lock(was_cancelled_mutex);
         if (was_cancelled)
-            return Block();
+            return ReadResult(Block());
 
         auto packet = connections->receivePacket();
         auto anything = processPacket(std::move(packet));
 
-        if (std::holds_alternative<Block>(anything) || std::holds_alternative<ParallelReplicasToken>(anything))
+        if (anything.getType() == ReadResult::Type::Data || anything.getType() == ReadResult::Type::ParallelReplicasToken)
             return anything;
-        else if (got_duplicated_part_uuids)
-            /// FIXME?
-            return std::get<Block>(restartQueryWithoutDuplicatedUUIDs());
+
+        if (got_duplicated_part_uuids)
+            return restartQueryWithoutDuplicatedUUIDs();
     }
 }
 
@@ -307,14 +308,14 @@ RemoteQueryExecutor::ReadResult RemoteQueryExecutor::read(std::unique_ptr<ReadCo
         sendQuery();
 
         if (context->getSettingsRef().skip_unavailable_shards && (0 == connections->size()))
-            return Block();
+            return ReadResult(Block());
     }
 
     if (!read_context || resent_query)
     {
         std::lock_guard lock(was_cancelled_mutex);
         if (was_cancelled)
-            return Block();
+            return ReadResult(Block());
 
         read_context = std::make_unique<ReadContext>(*connections);
     }
@@ -322,12 +323,12 @@ RemoteQueryExecutor::ReadResult RemoteQueryExecutor::read(std::unique_ptr<ReadCo
     do
     {
         if (!read_context->resumeRoutine())
-            return Block();
+            return ReadResult(Block());
 
         if (read_context->is_read_in_progress.load(std::memory_order_relaxed))
         {
             read_context->setTimer();
-            return read_context->epoll.getFileDescriptor();
+            return ReadResult(read_context->epoll.getFileDescriptor());
         }
         else
         {
@@ -335,13 +336,14 @@ RemoteQueryExecutor::ReadResult RemoteQueryExecutor::read(std::unique_ptr<ReadCo
             /// to avoid the race between cancel() thread and read() thread.
             /// (since cancel() thread will steal the fiber and may update the packet).
             if (was_cancelled)
-                return Block();
+                return ReadResult(Block());
 
             auto anything = processPacket(std::move(read_context->packet));
 
-            if (std::holds_alternative<Block>(anything) || std::holds_alternative<ParallelReplicasToken>(anything))
+            if (anything.getType() == ReadResult::Type::Data || anything.getType() == ReadResult::Type::ParallelReplicasToken)
                 return anything;
-            else if (got_duplicated_part_uuids)
+
+            if (got_duplicated_part_uuids)
                 return restartQueryWithoutDuplicatedUUIDs(&read_context);
         }
     }
@@ -382,11 +384,11 @@ RemoteQueryExecutor::ReadResult RemoteQueryExecutor::processPacket(Packet packet
     {
         case Protocol::Server::MergeTreeReadTaskRequest:
             processMergeTreeReadTaskRequest(packet.request);
-            return ParallelReplicasToken{};
+            return ReadResult(ReadResult::Type::ParallelReplicasToken);
 
         case Protocol::Server::MergeTreeAllRangesAnnounecement:
             processMergeTreeInitialReadAnnounecement(packet.announcement);
-            return ParallelReplicasToken{};
+            return ReadResult(ReadResult::Type::ParallelReplicasToken);
 
         case Protocol::Server::ReadTaskRequest:
             processReadTaskRequest();
@@ -400,7 +402,7 @@ RemoteQueryExecutor::ReadResult RemoteQueryExecutor::processPacket(Packet packet
             /// We can actually return it, and the first call to RemoteQueryExecutor::read
             /// will return earlier. We should consider doing it.
             if (packet.block && (packet.block.rows() > 0))
-                return adaptBlockStructure(packet.block, header);
+                return ReadResult(adaptBlockStructure(packet.block, header));
             break;  /// If the block is empty - we will receive other packets before EndOfStream.
 
         case Protocol::Server::Exception:
@@ -412,7 +414,8 @@ RemoteQueryExecutor::ReadResult RemoteQueryExecutor::processPacket(Packet packet
             if (!connections->hasActiveConnections())
             {
                 finished = true;
-                return Block();
+                /// TODO: Replace with Type::Finished
+                return ReadResult(Block{});
             }
             break;
 
@@ -467,7 +470,7 @@ RemoteQueryExecutor::ReadResult RemoteQueryExecutor::processPacket(Packet packet
                 connections->dumpAddresses());
     }
 
-    return Nothing{};
+    return ReadResult(ReadResult::Type::Nothing);
 }
 
 bool RemoteQueryExecutor::setPartUUIDs(const std::vector<UUID> & uuids)

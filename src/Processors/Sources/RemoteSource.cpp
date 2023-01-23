@@ -58,7 +58,7 @@ ISource::Status RemoteSource::prepare()
         return Status::Finished;
     }
 
-    /// Dependency port is full, but reading from local replica is not ended up
+    /// Dependency port is full, but reading from local replica is not finished
     if (dependency_port && !dependency_port->isFinished() && !dependency_port->canPush())
         return Status::PortFull;
 
@@ -112,16 +112,17 @@ std::optional<Chunk> RemoteSource::tryGenerate()
     {
         auto res = query_executor->read(read_context);
 
-        if (std::holds_alternative<RemoteQueryExecutor::Nothing>(res))
-            throw Exception(ErrorCodes::LOGICAL_ERROR, "This is a bug");
+        if (res.getType() == RemoteQueryExecutor::ReadResult::Type::Nothing)
+            throw Exception(ErrorCodes::LOGICAL_ERROR, "Got an empty packet from the RemoteQueryExecutor. This is a bug");
 
-        if (std::holds_alternative<int>(res))
+        if (res.getType() == RemoteQueryExecutor::ReadResult::Type::FileDescriptor)
         {
-            fd = std::get<int>(res);
+            fd = res.getFileDescriptor();
             is_async_state = true;
             return Chunk();
         }
-        else if (std::holds_alternative<RemoteQueryExecutor::ParallelReplicasToken>(res))
+
+        if (res.getType() == RemoteQueryExecutor::ReadResult::Type::ParallelReplicasToken)
         {
             /// For each empty chunk we have to read something from local replica
             if (dependency_port && !dependency_port->isFinished() && dependency_port->canPush())
@@ -132,7 +133,7 @@ std::optional<Chunk> RemoteSource::tryGenerate()
 
         is_async_state = false;
 
-        block = std::get<Block>(std::move(res));
+        block = res.getBlock();
     }
     else
         block = query_executor->readBlock();

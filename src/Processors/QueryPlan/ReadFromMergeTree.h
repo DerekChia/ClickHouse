@@ -4,7 +4,7 @@
 #include <Storages/MergeTree/RequestResponse.h>
 #include <Storages/SelectQueryInfo.h>
 #include <Storages/MergeTree/MergeTreeData.h>
-#include "Storages/MergeTree/MergeTreeReadPoolParallelReplicas.h"
+#include <Storages/MergeTree/MergeTreeReadPoolParallelReplicas.h>
 
 namespace DB
 {
@@ -70,7 +70,10 @@ public:
         /// The same as InOrder, but in reverse order.
         /// For every part, read ranges and granules from end to begin. Also add ReverseTransform.
         InReverseOrder,
-        Parallel,
+        /// A special type of reading where every replica
+        /// talks to a remote coordinator (which is located on the initiator node)
+        /// and who spreads marks and parts across them.
+        ParallelReplicas,
     };
 
     struct AnalysisResult

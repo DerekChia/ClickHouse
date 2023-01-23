@@ -7,7 +7,6 @@
 #include <Common/JSONBuilder.h>
 #include <Interpreters/PreparedSets.h>
 #include <Interpreters/Context.h>
-#include <Storages/IStorage.h>
 
 namespace DB
 {

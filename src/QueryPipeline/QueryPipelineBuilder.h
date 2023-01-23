@@ -140,6 +140,10 @@ public:
 
     void addCreatingSetsTransform(const Block & res_header, SubqueryForSet subquery_for_set, const SizeLimits & limits, ContextPtr context);
 
+    /// Finds all processors for reading from MergeTree
+    /// And explicitly connects them with all RemoteSources
+    /// using a ResizeProcessor. This is needed not to let
+    /// the RemoteSource to starve for CPU time
     void connectDependencies();
 
     PipelineExecutorPtr execute();

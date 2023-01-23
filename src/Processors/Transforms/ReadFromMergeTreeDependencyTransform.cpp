@@ -1,4 +1,4 @@
-#include <Processors/Transforms/RemoteDependencyTransform.h>
+#include <Processors/Transforms/ReadFromMergeTreeDependencyTransform.h>
 
 #include <QueryPipeline/RemoteQueryExecutor.h>
 
@@ -22,7 +22,7 @@ void ReadFromMergeTreeDependencyTransform::connectToScheduler(ResizeProcessor & 
     dependency_port = &inputs.back();
     auto * free_port = scheduler.getFreeOutputPortIfAny();
     if (!free_port)
-        throw Exception(ErrorCodes::LOGICAL_ERROR, "There are no free input ports in scheduler. This is a bug");
+        throw Exception(ErrorCodes::LOGICAL_ERROR, "There are no free output ports in scheduler. This is a bug");
 
     connect(*free_port, *dependency_port);
 }

@@ -94,9 +94,51 @@ public:
     /// Query is resent to a replica, the query itself can be modified.
     std::atomic<bool> resent_query { false };
 
-    struct ParallelReplicasToken {};
-    struct Nothing {};
-    using ReadResult = std::variant<Block, ParallelReplicasToken, int, Nothing>;
+    struct ReadResult
+    {
+      enum class Type
+      {
+        Data,
+        ParallelReplicasToken,
+        FileDescriptor,
+        Finished,
+        Nothing
+      };
+
+      explicit ReadResult(Block block_)
+        : type(Type::Data)
+        , block(std::move(block_))
+      {}
+
+      explicit ReadResult(int fd_)
+        : type(Type::FileDescriptor)
+        , fd(fd_)
+      {}
+
+      explicit ReadResult(Type type_)
+        : type(type_)
+      {
+        assert(type != Type::Data && type != Type::FileDescriptor);
+      }
+
+      Type getType() const { return type; }
+
+      Block getBlock()
+      {
+        chassert(type == Type::Data);
+        return std::move(block);
+      }
+
+      int getFileDescriptor() const
+      {
+        chassert(type == Type::FileDescriptor);
+        return fd;
+      }
+
+      Type type;
+      Block block;
+      int fd{-1};
+    };
 
     /// Read next block of data. Returns empty block if query is finished.
     Block readBlock();

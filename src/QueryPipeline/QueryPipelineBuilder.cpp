@@ -628,9 +628,9 @@ void QueryPipelineBuilder::connectDependencies()
 
     for (auto & processor : *pipe.getProcessorsPtr())
     {
-        if (auto * remote_dependency = dynamic_cast<RemoteSource *>(processor.get()); remote_dependency)
+        if (auto * remote_dependency = typeid_cast<RemoteSource *>(processor.get()); remote_dependency)
             input_dependencies.emplace_back(remote_dependency);
-        if (auto * merge_tree_dependency = dynamic_cast<ReadFromMergeTreeDependencyTransform *>(processor.get()); merge_tree_dependency)
+        if (auto * merge_tree_dependency = typeid_cast<ReadFromMergeTreeDependencyTransform *>(processor.get()); merge_tree_dependency)
             output_dependencies.emplace_back(merge_tree_dependency);
     }
 

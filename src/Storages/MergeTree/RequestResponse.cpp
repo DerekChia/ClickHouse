@@ -96,6 +96,10 @@ void ParallelReadResponse::deserialize(ReadBuffer & in)
 
 void InitialAllRangesAnnouncement::serialize(WriteBuffer & out) const
 {
+    UInt64 version = DBMS_PARALLEL_REPLICAS_PROTOCOL_VERSION;
+    /// Must be the first
+    writeIntBinary(version, out);
+
     description.serialize(out);
     writeIntBinary(replica_num, out);
 }
@@ -111,6 +115,13 @@ String InitialAllRangesAnnouncement::describe()
 
 void InitialAllRangesAnnouncement::deserialize(ReadBuffer & in)
 {
+    UInt64 version;
+    readIntBinary(version, in);
+    if (version != DBMS_PARALLEL_REPLICAS_PROTOCOL_VERSION)
+        throw Exception(ErrorCodes::UNKNOWN_PROTOCOL, "Protocol versions for parallel reading " \
+            "from replicas differ. Got: {}, supported version: {}",
+            version, DBMS_PARALLEL_REPLICAS_PROTOCOL_VERSION);
+
     description.deserialize(in);
     readIntBinary(replica_num, in);
 }

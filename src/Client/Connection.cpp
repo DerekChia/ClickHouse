@@ -33,7 +33,6 @@
 #include <pcg_random.hpp>
 #include <base/scope_guard.h>
 
-#include "Interpreters/Context.h"
 #include "config_version.h"
 #include "config.h"
 

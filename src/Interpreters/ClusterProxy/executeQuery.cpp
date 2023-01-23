@@ -294,7 +294,7 @@ void executeQueryWithParallelReplicas(
 
     auto read_from_remote = std::make_unique<ReadFromParallelRemoteReplicasStep>(
         query_ast,
-        shard_info,
+        std::move(shard_info),
         coordinator,
         stream_factory.header,
         stream_factory.processed_stage,
