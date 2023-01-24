@@ -6,11 +6,6 @@
 namespace DB
 {
 
-namespace ErrorCodes
-{
-    extern const int LOGICAL_ERROR;
-}
-
 ReadFromMergeTreeDependencyTransform::ReadFromMergeTreeDependencyTransform(const Block & header)
     : IProcessor(InputPorts(1, header), OutputPorts(1, header))
     , data_port(&inputs.front())
