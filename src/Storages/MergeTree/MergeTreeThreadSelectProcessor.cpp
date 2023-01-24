@@ -9,7 +9,7 @@ namespace DB
 
 MergeTreeThreadSelectAlgorithm::MergeTreeThreadSelectAlgorithm(
     size_t thread_,
-    const MergeTreeReadPoolPtr & pool_,
+    IMergeTreeReadPoolPtr pool_,
     size_t min_marks_for_concurrent_read_,
     size_t max_block_size_rows_,
     size_t preferred_block_size_bytes_,
@@ -27,7 +27,7 @@ MergeTreeThreadSelectAlgorithm::MergeTreeThreadSelectAlgorithm(
         preferred_block_size_bytes_, preferred_max_column_in_block_size_bytes_,
         reader_settings_, use_uncompressed_cache_, virt_column_names_},
     thread{thread_},
-    pool{pool_}
+    pool{std::move(pool_)}
 {
     min_marks_to_read = min_marks_for_concurrent_read_;
 }

@@ -19,7 +19,7 @@ namespace DB
 
 
 /// Weird class with copy-paste from original read pool
-class MergeTreeReadPoolParallelReplicas :  private boost::noncopyable
+class MergeTreeReadPoolParallelReplicas : public IMergeTreeReadPool, private boost::noncopyable
 {
 public:
 
@@ -45,13 +45,13 @@ public:
         fillPerPartInfo(parts_ranges);
     }
 
-    ~MergeTreeReadPoolParallelReplicas();
+    ~MergeTreeReadPoolParallelReplicas() override;
 
     /// Sends all the data about selected parts to the initiator
     void initialize();
-    MergeTreeReadTaskPtr getTask();
-    Block getHeader();
-    void profileFeedback(ReadBufferFromFileBase::ProfileInfo) {}
+    MergeTreeReadTaskPtr getTask(size_t thread) override;
+    Block getHeader() const override;
+    void profileFeedback(ReadBufferFromFileBase::ProfileInfo) override {}
 
 private:
     StorageSnapshotPtr storage_snapshot;

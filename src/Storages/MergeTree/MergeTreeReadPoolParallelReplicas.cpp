@@ -1,15 +1,17 @@
+#include <Storages/MergeTree/MergeTreeReadPoolParallelReplicas.h>
+
 #include <ctime>
 #include <mutex>
-#include <Storages/MergeTree/LoadedMergeTreeDataPartInfoForReader.h>
-#include <Storages/MergeTree/MergeTreeReadPoolParallelReplicas.h>
-#include <Poco/Logger.h>
-#include "Common/Stopwatch.h"
-#include "Common/ThreadPool.h"
+
+#include <Common/Stopwatch.h>
+#include <Common/ThreadPool.h>
+#include <Interpreters/Context.h>
+#include <IO/WriteBuffer.h>
+#include <IO/WriteBufferFromString.h>
+#include <Storages/MergeTree/RequestResponse.h>
 #include <Common/logger_useful.h>
-#include "IO/WriteBuffer.h"
-#include "IO/WriteBufferFromString.h"
-#include "Interpreters/Context.h"
-#include "Storages/MergeTree/RequestResponse.h"
+#include <Poco/Logger.h>
+#include <Storages/MergeTree/LoadedMergeTreeDataPartInfoForReader.h>
 
 namespace DB
 {
@@ -34,7 +36,7 @@ void MergeTreeReadPoolParallelReplicas::initialize()
     sendRequest();
 }
 
-Block MergeTreeReadPoolParallelReplicas::getHeader()
+Block MergeTreeReadPoolParallelReplicas::getHeader() const
 {
     return storage_snapshot->getSampleBlockForColumns(extension.colums_to_read);
 }
@@ -96,8 +98,11 @@ void MergeTreeReadPoolParallelReplicas::sendRequest()
 }
 
 
-MergeTreeReadTaskPtr MergeTreeReadPoolParallelReplicas::getTask()
+MergeTreeReadTaskPtr MergeTreeReadPoolParallelReplicas::getTask(size_t thread)
 {
+    /// This parameter is needed only to satisfy the interface
+    UNUSED(thread);
+
     std::lock_guard lock(mutex);
 
     if (no_more_tasks_available)

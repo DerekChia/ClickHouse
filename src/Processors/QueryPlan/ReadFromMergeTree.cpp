@@ -4,7 +4,6 @@
 #include <Common/JSONBuilder.h>
 #include <Common/logger_useful.h>
 #include <Common/isLocalAddress.h>
-#include "Storages/MergeTree/MergeTreeParallelReplicasSelectProcessor.h"
 #include "Storages/MergeTree/RequestResponse.h"
 #include <Interpreters/Context.h>
 #include <Interpreters/ExpressionAnalyzer.h>
@@ -229,8 +228,8 @@ Pipe ReadFromMergeTree::readFromPoolParallelReplicas(
 
     for (size_t i = 0; i < max_streams; ++i)
     {
-        auto algorithm = std::make_unique<MergeTreeParallelReplicasSelectProcessor>(
-            i, pool, max_block_size,
+        auto algorithm = std::make_unique<MergeTreeThreadSelectAlgorithm>(
+            i, pool, min_marks_for_concurrent_read, max_block_size,
             settings.preferred_block_size_bytes, settings.preferred_max_column_in_block_size_bytes,
             data, storage_snapshot, use_uncompressed_cache,
             prewhere_info, actions_settings, reader_settings, virt_column_names);
