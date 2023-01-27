@@ -43,4 +43,4 @@ contents:
   dst: /usr/share/doc/clickhouse-keeper/README.md
 
 scripts:
-  postinstall: ./clickhouse-server.postinstall
+  postinstall: ./clickhouse-keeper.postinstall
