@@ -6,7 +6,7 @@ PROGRAM=clickhouse-keeper
 KEEPER_USER=${KEEPER_USER:=clickhouse}
 KEEPER_GROUP=${KEEPER_GROUP:=clickhouse}
 # Please note that we don't support paths with whitespaces. This is rather ignorant.
-KEEPER_CONFDIR=${KEEPER_CONFDIR:=/etc/clickhouse-server}
+KEEPER_CONFDIR=${KEEPER_CONFDIR:=/etc/$PROGRAM}
 KEEPER_DATADIR=${KEEPER_DATADIR:=/var/lib/clickhouse}
 KEEPER_LOGDIR=${KEEPER_LOGDIR:=/var/log/$PROGRAM}
 
@@ -28,7 +28,8 @@ if [ "$1" = configure ] || [ -n "$not_deb_os" ]; then
             "${KEEPER_USER}"
     fi
 
-    chmod 0700 "${KEEPER_CONFDIR}"
+    chown -R "${KEEPER_USER}:${KEEPER_GROUP}" "${KEEPER_CONFDIR}"
+    chmod 0755 "${KEEPER_CONFDIR}"
 
     if ! [ -d "${KEEPER_DATADIR}" ]; then
         mkdir -p "${KEEPER_DATADIR}"
