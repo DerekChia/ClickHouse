@@ -88,13 +88,6 @@ void MergeTreeReadPoolParallelReplicas::sendRequest()
 {
     auto promise_response = std::make_shared<std::promise<std::optional<ParallelReadResponse>>>();
     future_response = promise_response->get_future();
-    GlobalThreadPool::instance().scheduleOrThrow(
-    [promise = std::move(promise_response), this]() mutable
-    {
-        auto result = extension.callback(ParallelReadRequest{
-            .replica_num = extension.number_of_current_replica, .min_number_of_marks = min_marks_for_concurrent_read * threads});
-        promise->set_value(result);
-    });
 }
 
 
@@ -108,9 +101,10 @@ MergeTreeReadTaskPtr MergeTreeReadPoolParallelReplicas::getTask(size_t thread)
     if (no_more_tasks_available)
         return nullptr;
 
-    if (buffered_ranges.empty() && future_response.valid())
+    if (buffered_ranges.empty())
     {
-        auto result = future_response.get();
+        auto result = extension.callback(ParallelReadRequest{
+            .replica_num = extension.number_of_current_replica, .min_number_of_marks = min_marks_for_concurrent_read * threads});
 
         if (!result || result->finish)
         {
@@ -169,9 +163,6 @@ MergeTreeReadTaskPtr MergeTreeReadPoolParallelReplicas::getTask(size_t thread)
 
     auto curr_task_size_predictor
         = !per_part.size_predictor ? nullptr : std::make_unique<MergeTreeBlockSizePredictor>(*per_part.size_predictor); /// make a copy
-
-    if (buffered_ranges.empty())
-        sendRequest();
 
     return std::make_unique<MergeTreeReadTask>(
         part.data_part,

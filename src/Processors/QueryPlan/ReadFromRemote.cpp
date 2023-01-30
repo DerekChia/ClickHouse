@@ -324,7 +324,7 @@ void ReadFromParallelRemoteReplicasStep::initializePipeline(QueryPipelineBuilder
     size_t all_replicas_count = current_settings.max_parallel_replicas;
     if (all_replicas_count > shard_info.all_addresses.size())
     {
-        LOG_WARNING(&Poco::Logger::get("ReadFromParallelRemoteReplicasStep"),
+        LOG_INFO(&Poco::Logger::get("ReadFromParallelRemoteReplicasStep"),
             "The number of replicas requested ({}) is bigger than the real number available in the cluster ({}). "\
             "Will use the latter number to execute the query.", current_settings.max_parallel_replicas, shard_info.all_addresses.size());
         all_replicas_count = shard_info.all_addresses.size();

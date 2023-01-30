@@ -54,10 +54,6 @@ ISource::Status RemoteSource::prepare()
         return Status::Finished;
     }
 
-    /// Dependency port is full, but reading from local replica is not finished
-    if (dependency_port && !dependency_port->isFinished() && !dependency_port->canPush())
-        return Status::PortFull;
-
     if (is_async_state)
         return Status::Async;
 
@@ -70,7 +66,18 @@ ISource::Status RemoteSource::prepare()
         if (dependency_port)
             dependency_port->finish();
         is_async_state = false;
+
+        return status;
     }
+
+    if (status == Status::PortFull)
+    {
+        /// Also push empty chunk to dependency to signal that we read data from remote source
+        /// or answered to the incoming request from parallel replica
+        if (dependency_port && !dependency_port->isFinished() && dependency_port->canPush())
+            dependency_port->push(Chunk());
+    }
+
     return status;
 }
 
@@ -120,10 +127,7 @@ std::optional<Chunk> RemoteSource::tryGenerate()
 
         if (res.getType() == RemoteQueryExecutor::ReadResult::Type::ParallelReplicasToken)
         {
-            /// For each empty chunk we have to read something from local replica
-            if (dependency_port && !dependency_port->isFinished() && dependency_port->canPush())
-                dependency_port->push(Chunk());
-
+            is_async_state = false;
             return Chunk();
         }
 

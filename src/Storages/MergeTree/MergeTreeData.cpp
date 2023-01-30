@@ -57,7 +57,6 @@
 #include <Storages/AlterCommands.h>
 #include <Storages/Freeze.h>
 #include <Storages/MergeTree/checkDataPart.h>
-#include <Storages/MergeTree/DataPartStorageOnDisk.h>
 #include <Storages/MergeTree/MergeTreeBaseSelectProcessor.h>
 #include <Storages/MergeTree/MergeTreeDataPartCompact.h>
 #include <Storages/MergeTree/MergeTreeDataPartInMemory.h>
@@ -85,6 +84,7 @@
 #include <filesystem>
 
 #include <fmt/format.h>
+#include <Poco/Logger.h>
 
 template <>
 struct fmt::formatter<DB::DataPartPtr> : fmt::formatter<std::string>

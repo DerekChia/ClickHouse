@@ -129,8 +129,8 @@ function run_tests()
 
     if [[ -n "$USE_PARALLEL_REPLICAS" ]] && [[ "$USE_PARALLEL_REPLICAS" -eq 1 ]]; then
         clickhouse-test --client="clickhouse-client --use_hedged_requests=0  --allow_experimental_parallel_reading_from_replicas=1 \
-            --max_parallel_replicas=3 --cluster_for_parallel_replicas='test_cluster_one_shard_three_replicas_localhost'" \
-            -j 2 --testname --shard --zookeeper --check-zookeeper-session --no-stateless --hung-check --print-time "${ADDITIONAL_OPTIONS[@]}" \
+            --max_parallel_replicas=100 --cluster_for_parallel_replicas='parallel_replicas'" \
+            -j 2 --testname --shard --zookeeper --check-zookeeper-session --no-stateless --no-parallel-replicas --hung-check --print-time "${ADDITIONAL_OPTIONS[@]}" \
         "$SKIP_TESTS_OPTION" 2>&1 | ts '%Y-%m-%d %H:%M:%S' | tee test_output/test_result.txt
     else
         clickhouse-test -j 2 --testname --shard --zookeeper --check-zookeeper-session --no-stateless --hung-check --print-time "${ADDITIONAL_OPTIONS[@]}" \

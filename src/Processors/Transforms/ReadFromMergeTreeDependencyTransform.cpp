@@ -47,6 +47,8 @@ IProcessor::Status ReadFromMergeTreeDependencyTransform::prepareConsume()
     /// Try get chunk from input.
     if (data_port->isFinished())
     {
+        if (dependency_port->hasData())
+            dependency_port->pull(true);
         dependency_port->close();
         output_port.finish();
         return Status::Finished;

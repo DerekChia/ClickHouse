@@ -507,7 +507,7 @@ void RemoteQueryExecutor::processMergeTreeReadTaskRequest(ParallelReadRequest re
 void RemoteQueryExecutor::processMergeTreeInitialReadAnnounecement(InitialAllRangesAnnouncement announcement)
 {
     if (!parallel_reading_coordinator)
-        throw Exception("Coordinator for parallel reading from replicas is not initialized", ErrorCodes::LOGICAL_ERROR);
+        throw Exception(ErrorCodes::LOGICAL_ERROR, "Coordinator for parallel reading from replicas is not initialized");
 
     parallel_reading_coordinator->handleInitialAllRangesAnnouncement(announcement);
 }
